@@ -15,6 +15,7 @@ class BinaryTree
     end
 
     grid
+    puts grid
   end
 
 end
