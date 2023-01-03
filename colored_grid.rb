@@ -14,5 +14,8 @@ class ColoredGrid < Grid
     dark = (255 * intensity).round
     bright = 128 + (127 * intensity).round
     ChunkyPNG::Color.rgb(dark, bright, dark)
+    # ChunkyPNG::Color.rgb(bright, dark, dark)
+    # ChunkyPNG::Color.rgb(bright, dark, bright)
+    # ChunkyPNG::Color.rgb(dark, dark, bright)
   end
 end
