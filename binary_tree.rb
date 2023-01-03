@@ -1,5 +1,4 @@
 class BinaryTree
-
   def self.on(grid)
     grid.each_cell do |cell|
       neighbors = []
@@ -15,7 +14,5 @@ class BinaryTree
     end
 
     grid
-    puts grid
   end
-
 end

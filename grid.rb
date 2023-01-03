@@ -62,6 +62,10 @@ class Grid
     end
   end
 
+  def contents_of(cell)
+    " "
+  end
+
   def to_s
     output = "┏" + "━━━━" * columns + "\b┓\n"
 
@@ -82,7 +86,7 @@ class Grid
       row.each do |cell|
         cell = Cell.new(-1, -1) unless cell
 
-        body = "   " # Three spaces
+        body = " #{contents_of(cell)} " # Three spaces
         east_boundary = (cell.linked?(cell.east) ? " " : "┃")
 
         top << body << east_boundary
