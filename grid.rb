@@ -1,5 +1,5 @@
-require 'cell'
-require 'chunky_png'
+require "cell"
+require "chunky_png"
 
 class Grid
   attr_reader :rows, :columns
@@ -14,9 +14,7 @@ class Grid
 
   def prepare_grid
     Array.new(rows) do |row|
-      Array.new(columns) do |column|
-        Cell.new(row, column)
-      end
+      Array.new(columns) { |column| Cell.new(row, column) }
     end
   end
 
@@ -26,8 +24,8 @@ class Grid
 
       cell.north = self[row - 1, col]
       cell.south = self[row + 1, col]
-      cell.west  = self[row, col - 1]
-      cell.east  = self[row, col + 1]
+      cell.west = self[row, col - 1]
+      cell.east = self[row, col + 1]
     end
   end
 
@@ -49,25 +47,32 @@ class Grid
   end
 
   def each_row
-    @grid.each do |row|
-      yield row
-    end
+    @grid.each { |row| yield row }
   end
 
   def each_cell
-    each_row do |row|
-      row.each do |cell|
-        yield cell if cell
-      end
-    end
+    each_row { |row| row.each { |cell| yield cell if cell } }
   end
 
   def contents_of(cell)
     " "
   end
 
+  def background_color_for(cell)
+    nil
+  end
+
   def to_s
-    output = "┏" + "━━━━" * columns + "\b┓\n"
+    output = "┏"
+    each_row do |row|
+      row.each do |cell|
+        output << "━━━"
+        cell.linked?(cell.east) ? output << "━" : output << "┳"
+      end
+      break
+    end
+
+    output << "\b┓\n"
 
     each_row do |row|
       top = "┃"
@@ -75,13 +80,12 @@ class Grid
       first_cell = row[0]
 
       if first_cell.south == nil
-        bottom = "┗" 
-      elsif first_cell.linked?(first_cell.south) 
-        bottom = "┃" 
+        bottom = "┗"
+      elsif first_cell.linked?(first_cell.south)
+        bottom = "┃"
       else
         bottom = "┣"
       end
-
 
       row.each do |cell|
         cell = Cell.new(-1, -1) unless cell
@@ -90,7 +94,7 @@ class Grid
         east_boundary = (cell.linked?(cell.east) ? " " : "┃")
 
         top << body << east_boundary
-        
+
         south_boundary = (cell.linked?(cell.south) ? "   " : "━━━")
 
         if cell.east == nil or cell.south == nil
@@ -106,9 +110,13 @@ class Grid
             corner = "┫"
           end
         else
-          corner = "╋" 
-          corner = "┣" if (cell.linked?(cell.south) and !cell.linked?(cell.east))
-          corner = "┳" if (!cell.linked?(cell.south) and cell.linked?(cell.east))
+          corner = "╋"
+          corner = "┣" if (
+            cell.linked?(cell.south) and !cell.linked?(cell.east)
+          )
+          corner = "┳" if (
+            !cell.linked?(cell.south) and cell.linked?(cell.east)
+          )
           corner = "┏" if (cell.linked?(cell.south) and cell.linked?(cell.east))
 
           if cell.linked?(cell.south) and cell.linked?(cell.east)
@@ -122,7 +130,8 @@ class Grid
           end
 
           if !cell.linked?(cell.south) and cell.linked?(cell.east)
-            if cell.south.linked?(cell.south.east) and cell.east.linked?(cell.east.south)
+            if cell.south.linked?(cell.south.east) and
+                 cell.east.linked?(cell.east.south)
               corner = "╸"
             elsif cell.south.linked?(cell.south.east)
               corner = "━"
@@ -132,20 +141,22 @@ class Grid
               corner = "┓"
             end
           end
-          
+
           if cell.linked?(cell.south) and !cell.linked?(cell.east)
-            if cell.south.linked?(cell.south.east) and !cell.east.linked?(cell.south)
-              corner = "┗" 
+            if cell.south.linked?(cell.south.east) and
+                 !cell.east.linked?(cell.east.south)
+              corner = "┗"
             elsif cell.east.linked?(cell.east.south)
               corner = "┃"
             end
           end
 
           if !cell.linked?(cell.south) and !cell.linked?(cell.east)
-          
-            if cell.south.linked?(cell.south.east) and cell.east.linked?(cell.east.south)
+            if cell.south.linked?(cell.south.east) and
+                 cell.east.linked?(cell.east.south)
               corner = "┛"
-            elsif cell.south.linked?(cell.south.east) and !cell.east.linked?(cell.east.south)
+            elsif cell.south.linked?(cell.south.east) and
+                  !cell.east.linked?(cell.east.south)
               corner = "┻"
             elsif cell.south.linked?(cell.south.east)
               corner = "━"
@@ -153,11 +164,10 @@ class Grid
               corner = "┫"
             end
           end
-
         end
         bottom << south_boundary << corner
       end
-    
+
       output << top << "\n"
       output << bottom << "\n"
     end
@@ -174,22 +184,26 @@ class Grid
 
     img = ChunkyPNG::Image.new(img_width + 1, img_height + 1, background)
 
-    each_cell do |cell|
-      x1 = cell.column * cell_size
-      y1 = cell.row * cell_size
-      x2 = (cell.column + 1) * cell_size
-      y2 = (cell.row + 1) * cell_size
+    %i[backgrounds walls].each do |mode|
+      each_cell do |cell|
+        x1 = cell.column * cell_size
+        y1 = cell.row * cell_size
+        x2 = (cell.column + 1) * cell_size
+        y2 = (cell.row + 1) * cell_size
 
-      img.line(x1, y1, x2, y1, wall) unless cell.north
-      img.line(x1, y1, x1, y2, wall) unless cell.west
+        if mode == :backgrounds
+          color = background_color_for(cell)
+          img.rect(x1, y1, x2, y2, color, color) if color
+        else
+          img.line(x1, y1, x2, y1, wall) unless cell.north
+          img.line(x1, y1, x1, y2, wall) unless cell.west
 
-      img.line(x2, y1, x2, y2, wall) unless cell.linked?(cell.east)
-      img.line(x1, y2, x2, y2, wall) unless cell.linked?(cell.south)
+          img.line(x2, y1, x2, y2, wall) unless cell.linked?(cell.east)
+          img.line(x1, y2, x2, y2, wall) unless cell.linked?(cell.south)
+        end
+      end
     end
 
     img
   end
-
 end
-
-

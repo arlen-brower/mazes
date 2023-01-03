@@ -1,4 +1,4 @@
-require 'distances'
+require "distances"
 
 class Cell
   attr_reader :row, :column
@@ -9,13 +9,13 @@ class Cell
     @links = {}
   end
 
-  def link(cell, bidi=true)
+  def link(cell, bidi = true)
     @links[cell] = true
     cell.link(self, false) if bidi
     self
   end
 
-  def unlink(cell, bidi=true)
+  def unlink(cell, bidi = true)
     @links.delete(cell)
     cell.unlock(self, false) if bidi
     self
@@ -33,13 +33,14 @@ class Cell
     list = []
     list << north if north
     list << south if south
-    list << east  if east
-    list << west  if west
+    list << east if east
+    list << west if west
+    list
   end
 
   def distances
     distances = Distances.new(self)
-    frontier = [ self ]
+    frontier = [self]
 
     while frontier.any?
       new_frontier = []
@@ -58,4 +59,7 @@ class Cell
     distances
   end
 
+  def to_s
+    "(#{row}, #{column})"
+  end
 end
