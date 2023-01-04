@@ -4,11 +4,19 @@ require "sidewinder"
 require "aldous_broder"
 require "wilsons"
 require "hunt_and_kill"
+require "recursive_backtracker"
 
-algorithms = [BinaryTree, Sidewinder, AldousBroder, Wilsons, HuntAndKill]
+algorithms = [
+  BinaryTree,
+  Sidewinder,
+  AldousBroder,
+  Wilsons,
+  HuntAndKill,
+  RecursiveBacktracker
+]
 
 tries = 1000
-size = 250
+size = 25
 
 averages = {}
 
