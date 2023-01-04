@@ -88,19 +88,29 @@ class Grid
 
   def to_s(borders = true)
     output = black_foreground
-    output << "┏"
     each_row do |row|
+      output << "┏" if row[0] == nil or row[0].links.count > 0
+      output << " " if row[0] == nil or row[0].links.count == 0
       row.each do |cell|
-        output << "━━━"
-        cell.linked?(cell.east) ? output << "━" : output << "┳"
+        output << "━━━" if cell and cell.links.count > 0
+        output << "   " if cell == nil or cell.links.count == 0
+
+        corner = "━" if cell.linked?(cell.east)
+        corner = "┳" if !cell.linked?(cell.east)
+        corner = "┏" if cell.links.count == 0
+        corner = "┓" if cell.east == nil
+        corner = " " if cell.east == nil and cell.links.count == 0
+        output << corner
       end
       break
     end
 
-    output << "\b┓\n"
+    # output << "\b┓\n"
+    output << "\n"
 
     each_row do |row|
       top = "┃"
+      top = " " if row[0].links.count == 0 and row[0].west == nil
 
       first_cell = row[0]
 
@@ -112,11 +122,16 @@ class Grid
         bottom = "┣"
       end
 
+      bottom = "┏" if row[0].links.count == 0 and row[0].south != nil
+      bottom = " " if row[0].links.count == 0 and
+        (row[0].south == nil or row[0].south.links.count == 0)
+
       row.each do |cell|
         cell = Cell.new(-1, -1) unless cell
 
         body = "#{contents_of(cell)}" # Three spaces
         east_boundary = (cell.linked?(cell.east) ? " " : "┃")
+        east_boundary = " " if cell.links.count == 0 and cell.east == nil
 
         if borders
           top << black_foreground << background_color_for(
@@ -132,6 +147,9 @@ class Grid
           top << east_boundary
         end
         south_boundary = (cell.linked?(cell.south) ? "   " : "━━━")
+        south_boundary = "   " if cell.links.count == 0 and cell.south == nil
+        south_boundary = "   " if cell.links.count == 0 and
+          cell.south != nil and cell.south.links.count == 0
 
         if cell.east == nil or cell.south == nil
           if cell.linked?(cell.south)
@@ -201,6 +219,47 @@ class Grid
             end
           end
         end
+
+        corner = "┻" if cell.east == nil and !cell.linked?(cell.south) and
+          cell.south != nil and cell.south.linked?(cell.south.east)
+        corner = "┃" if cell.links.count == 0 and cell.south != nil and
+          cell.south.links.count == 0
+
+        corner = "┣" if cell.links.count == 0 and cell.south != nil and
+          cell.south.links.count == 0 and
+          (cell.east == nil or !cell.east.linked?(cell.east.south))
+
+        corner = "┓" if cell.south == nil and cell.linked?(cell.east) and
+          cell.east.linked?(cell.east.south)
+
+        corner = "┓" if cell.links.count == 0 and cell.east == nil and
+          cell.south != nil and cell.south.east == nil
+
+        corner = "┳" if cell.south == nil and cell.east != nil and
+          cell.east.south != nil and !cell.east.linked?(cell.east.south)
+
+        corner = "┫" if cell.south == nil and cell.east != nil and
+          cell.east.south != nil and !cell.linked?(cell.east)
+
+        corner = "┗" if cell.links.count == 0 and cell.south == nil and
+          cell.east != nil and cell.east.south == nil
+
+        corner = "┗" if cell.east == nil and cell.south != nil and
+          cell.south.east != nil and cell.linked?(cell.south) and
+          cell.south.linked?(cell.south.east)
+
+        corner = "┣" if cell.east == nil and cell.south != nil and
+          cell.south.east != nil and cell.linked?(cell.south) and
+          !cell.south.linked?(cell.south.east)
+
+        corner = " " if cell.links.count == 0 and cell.south == nil and
+          cell.east == nil
+        corner = " " if cell.links.count == 0 and cell.south != nil and
+          cell.south.links.count == 0 and cell.east == nil
+
+        corner = "━" if cell.links.count == 0 and !cell.linked?(cell.south) and
+          cell.south != nil and cell.south.east != nil and
+          cell.south.linked?(cell.south.east) and cell.east == nil
         if borders
           bottom << black_foreground << blend_colors(
             cell,
