@@ -254,4 +254,12 @@ class Grid
 
     img
   end
+
+  def deadends
+    list = []
+
+    each_cell { |cell| list << cell if cell.links.count == 1 }
+
+    list
+  end
 end
