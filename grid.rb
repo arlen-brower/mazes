@@ -286,7 +286,7 @@ class Grid
     img_width = cell_size * columns
     img_height = cell_size * rows
 
-    background = ChunkyPNG::Color::WHITE
+    background = ChunkyPNG::Color::TRANSPARENT
     wall = ChunkyPNG::Color::BLACK
 
     img = ChunkyPNG::Image.new(img_width + 1, img_height + 1, background)
