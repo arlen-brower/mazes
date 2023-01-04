@@ -3,10 +3,15 @@ require "chunky_png"
 
 class Grid
   attr_reader :rows, :columns
+  attr_accessor :r, :g, :b
 
   def initialize(rows, columns)
     @rows = rows
     @columns = columns
+
+    @r = 214
+    @g = 220
+    @b = 230
 
     @grid = prepare_grid
     configure_cells
@@ -26,6 +31,7 @@ class Grid
       cell.south = self[row + 1, col]
       cell.west = self[row, col - 1]
       cell.east = self[row, col + 1]
+      cell.southeast = self[row + 1, col + 1]
     end
   end
 
@@ -55,15 +61,34 @@ class Grid
   end
 
   def contents_of(cell)
-    " "
+    "   "
   end
 
   def background_color_for(cell)
-    nil
+    color = "\033[0m"
+    color << black_foreground
+    color
   end
 
-  def to_s
-    output = "┏"
+  def reset_color
+    color = "\033[0m"
+    color << black_foreground
+    color
+  end
+
+  def blend_colors(cell_one, cell_two)
+    color = "\033[0m"
+    color << black_foreground
+    color
+  end
+
+  def black_foreground
+    "\033[38;2;#{@r};#{@g};#{@b}m"
+  end
+
+  def to_s(borders = true)
+    output = black_foreground
+    output << "┏"
     each_row do |row|
       row.each do |cell|
         output << "━━━"
@@ -90,11 +115,22 @@ class Grid
       row.each do |cell|
         cell = Cell.new(-1, -1) unless cell
 
-        body = " #{contents_of(cell)} " # Three spaces
+        body = "#{contents_of(cell)}" # Three spaces
         east_boundary = (cell.linked?(cell.east) ? " " : "┃")
 
-        top << body << east_boundary
-
+        if borders
+          top << black_foreground << background_color_for(
+            cell
+          ) << body << blend_colors(
+            cell,
+            cell.east
+          ) << black_foreground << east_boundary
+        else
+          top << black_foreground
+          top << background_color_for(cell) << body << black_foreground
+          top << blend_colors(cell, cell.east) if east_boundary == " "
+          top << east_boundary
+        end
         south_boundary = (cell.linked?(cell.south) ? "   " : "━━━")
 
         if cell.east == nil or cell.south == nil
@@ -165,11 +201,23 @@ class Grid
             end
           end
         end
-        bottom << south_boundary << corner
+        if borders
+          bottom << black_foreground << blend_colors(
+            cell,
+            cell.south
+          ) << south_boundary << blend_colors(
+            cell,
+            cell.southeast
+          ) << corner << reset_color
+        else
+          bottom << black_foreground
+          bottom << blend_colors(cell, cell.south) if south_boundary == "   "
+          bottom << south_boundary << reset_color << corner << reset_color
+        end
       end
 
-      output << top << "\n"
-      output << bottom << "\n"
+      output << black_foreground << top << reset_color << "\n"
+      output << black_foreground << bottom << reset_color << "\n"
     end
 
     output
